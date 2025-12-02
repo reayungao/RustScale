@@ -46,15 +46,14 @@ The engine adapts to each model's requirements rather than forcing models to con
 
 ## Included Models
 
-- **SPAN**: Lightning-fast upscaling for everyday use
+- **SPAN**: Lightning-fast upscaling for low-resolution images
 - **RealPLKSR**: Balanced quality and performance
-- **HAT-Base**: Maximum quality with photorealistic texture generation
-- **AnimeSharp V4**: Optimized for digital art and illustrations
+- **SAFMNv3**: Next-gen Efficienct Model
+- **Real-ESRGANv3**: Legacy Univesal Model
 
 ## Requirements
 
 - **Windows**: Windows 10/11 with DirectML support
-- **macOS**: macOS 13+ (Apple Silicon or Intel)
 - **Linux**: Ubuntu 20.04+ or equivalent
 
 ## Installation
@@ -62,7 +61,6 @@ The engine adapts to each model's requirements rather than forcing models to con
 Download the latest release for your platform from the [Releases](../../releases) page:
 
 - Windows: `.exe` installer
-- macOS: `.dmg` disk image
 - Linux: `.AppImage`
 
 ## Usage
@@ -82,10 +80,6 @@ Download the latest release for your platform from the [Releases](../../releases
 ## Contributing
 
 Contributions are welcome! Whether it's bug reports, feature requests, or code improvements, I'd love to hear from you.
-
-## License
-
-[Add your license here]
 
 ## Acknowledgments
 
