@@ -1,89 +1,212 @@
-# RustScale Desktop
+<div align="center">
+
+# 🚀 RustScale Desktop
 
 **The definitive AI-powered image upscaler for 2025.**
 
-RustScale is a modern desktop application that uses state-of-the-art AI models to upscale and enhance your images with unprecedented quality and performance.
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Tauri](https://img.shields.io/badge/Tauri-v2-24C8DB?logo=tauri)](https://tauri.app/)
+[![Rust](https://img.shields.io/badge/Rust-1.70+-orange?logo=rust)](https://www.rust-lang.org/)
+[![Svelte](https://img.shields.io/badge/Svelte-5-FF3E00?logo=svelte)](https://svelte.dev/)
+[![ONNX](https://img.shields.io/badge/ONNX-Runtime-005CED?logo=onnx)](https://onnxruntime.ai/)
 
-## Why RustScale?
+[Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage) • [Contributing](#-contributing)
+
+![RustScale Demo](https://via.placeholder.com/800x400/1a1a1a/ffffff?text=RustScale+Demo+Screenshot)
+
+</div>
+
+---
+
+## 🎯 Why RustScale?
 
 Most desktop upscalers are built on outdated technology—heavy Electron frameworks consuming hundreds of megabytes of RAM, clunky CLI wrappers, and rigid model support. RustScale breaks this mold:
 
-- **10x More Efficient**: Built with Tauri v2 and Rust, using only ~30MB of RAM (vs ~400MB for Electron-based apps)
-- **Industry-Standard AI**: Uses ONNX Runtime with support for models from HuggingFace, PyTorch, and research papers
-- **Smart Hardware Support**: Automatically detects and optimizes for your GPU, NPU, or CPU
-- **Seamless Results**: Advanced mirror-padding tiling eliminates visible grid lines and artifacts
-- **Just Works**: Drag and drop ONNX models—no compilation or conversion needed
+| Legacy Apps | RustScale |
+|------------|-----------|
+| 🐌 ~400MB RAM (Electron) | ⚡ ~30MB RAM (Tauri v2) |
+| 🔧 CLI wrapper processes | 🧠 In-process AI runtime |
+| 📦 Proprietary formats | 🌐 Industry-standard ONNX |
+| 🎲 Manual configuration | 🤖 Auto-detects hardware |
+| 🔲 Visible grid artifacts | ✨ Seamless tiling |
 
-## Key Features
+## ✨ Key Features
 
-- **Universal Model Support**: Works with any ONNX super-resolution model
-- **Intelligent Batching**: Automatically adjusts performance based on your hardware
-- **Face Recovery**: Optional facial enhancement using CodeFormer
-- **Real-Time Preview**: Compare before/after with pan and zoom
-- **Batch Processing**: Queue multiple images or entire folders
-- **Zero Configuration**: Smart defaults with advanced controls when you need them
+<table>
+<tr>
+<td width="50%">
 
-## Built with AI Assistance
+### 🎨 **Universal Model Support**
+Drag and drop any ONNX super-resolution model—no compilation needed.
 
-**Full transparency**: This project was built using AI coding agents, specifically Google Antigravity, Gemini 3, and Claude Sonnet 4.5.
+### ⚙️ **Intelligent Hardware Optimization**
+Automatically detects and optimizes for GPU, NPU, or CPU.
+
+### 📦 **Batch Processing**
+Queue multiple images or entire folders with real-time progress.
+
+</td>
+<td width="50%">
+
+### 🔍 **Real-Time Preview**
+Compare before/after with pan, zoom, and slider controls.
+
+### 👤 **Face Recovery**
+Optional facial enhancement using CodeFormer integration.
+
+### 🎯 **Zero Configuration**
+Smart defaults that just work, with advanced controls when needed.
+
+</td>
+</tr>
+</table>
+
+## 🤖 Built with AI Assistance
+
+<div align="center">
+
+### 🔬 Full Transparency
+
+</div>
+
+This project was built using **AI coding agents**: Google Antigravity, Gemini 3, and Claude Sonnet 4.5.
 
 I don't have extensive coding experience, but I had a clear vision for an upscaler that respects both user hardware and modern AI capabilities. Agentic AI coding tools helped me turn that vision into reality—an app I genuinely want to use.
 
-**If you have reservations about AI-assisted development, that's completely valid, and you're free not to use this app.** I believe in transparency about the tools used in creation. What matters most is whether the end result serves users well.
+> **If you have reservations about AI-assisted development, that's completely valid, and you're free not to use this app.** I believe in transparency about the tools used in creation. What matters most is whether the end result serves users well.
 
-That said, I'm always open to feedback, suggestions, and contributions that can make RustScale even better.
+**I'm always open to feedback, suggestions, and contributions that can make RustScale even better.** 💡
 
-## How It Works
+## 🏗️ How It Works
 
-RustScale uses a "Native Integration Architecture" instead of spawning external processes. The AI runtime runs directly in the application's memory space, enabling:
+RustScale uses a **"Native Integration Architecture"** instead of spawning external processes:
 
-- Zero-latency communication between UI and AI
-- Direct VRAM management
-- Real-time progress tracking
-- Instant cancellation
+```
+┌─────────────┐      ┌──────────────┐      ┌─────────────┐
+│   Svelte    │ ───> │  Rust Core   │ ───> │ ONNX Runtime│
+│   UI Layer  │ IPC  │  + HAL       │ Zero │  (In-Memory)│
+└─────────────┘      └──────────────┘ Copy └─────────────┘
+                            │
+                    ┌───────┴───────┐
+                    │ GPU/NPU/CPU   │
+                    └───────────────┘
+```
 
-The engine adapts to each model's requirements rather than forcing models to conform to rigid specifications—supporting FP16/FP32 precision, various input shapes, and automatic scale detection.
+**Benefits:**
+- ⚡ Zero-latency communication between UI and AI
+- 💾 Direct VRAM management
+- 📊 Real-time progress tracking
+- ⏹️ Instant cancellation
 
-## Included Models
+## 📦 Included Models
 
-- **SPAN**: Lightning-fast upscaling for low-resolution images
-- **RealPLKSR**: Balanced quality and performance
-- **SAFMNv3**: Next-gen Efficienct Model
-- **Real-ESRGANv3**: Legacy Univesal Model
+| Model | Speed | Quality | Best For |
+|-------|-------|---------|----------|
+| 🏃 **SPAN** | ⚡⚡⚡ | ⭐⭐⭐ | Fast upscaling for low-res images |
+| 🚀 **SAFMN-V3** | ⚡⚡⚡ | ⭐⭐⭐ | Next-gen efficient model |
+| 🎨 **NomosUni SPAN** | ⚡⚡ | ⭐⭐⭐ | Digital art and illustrations |
+| 💎 **Real-PLSKR** | ⚡ | ⭐⭐⭐⭐ | Maximum quality for photos |
+| 🎭 **RealPLSKR Anime** | ⚡ | ⭐⭐⭐⭐ | Best quality for anime & digital art |
+| 🔧 **Real-ESRGAN-V3** | ⚡⚡ | ⭐⭐ | Legacy model for compatibility |
 
-## Requirements
+## 💻 System Requirements
 
-- **Windows**: Windows 10/11 with DirectML support
-- **Linux**: Ubuntu 20.04+ or equivalent
+<table>
+<tr>
+<td align="center">🪟 <b>Windows</b></td>
+<td align="center">🍎 <b>macOS</b></td>
+<td align="center">🐧 <b>Linux</b></td>
+</tr>
+<tr>
+<td>Windows 10/11<br>DirectML support</td>
+<td>macOS 13+<br>Apple Silicon or Intel</td>
+<td>Ubuntu 20.04+<br>or equivalent</td>
+</tr>
+</table>
 
-## Installation
+## 📥 Installation
 
-Download the latest release for your platform from the [Releases](../../releases) page:
+<div align="center">
 
-- Windows: `.exe` installer
-- Linux: `.AppImage`
+### Download the latest release for your platform:
 
-## Usage
+[![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](../../releases)
+[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](../../releases)
+[![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](../../releases)
 
-1. Launch RustScale
-2. Select your scenario (Fast, Balanced, Quality, or Digital Art)
-3. Drag and drop images or folders
-4. Adjust settings if needed (repair strength, face recovery)
-5. Click upscale and watch the magic happen
+</div>
 
-## Performance Tips
+**Installation Files:**
+- 🪟 Windows: `.exe` installer
+- 🍎 macOS: `.dmg` disk image  
+- 🐧 Linux: `.AppImage`
 
-- **Laptop users**: The app automatically enables Eco Mode on battery power
-- **Limited VRAM**: The engine adjusts tile sizes based on available memory
-- **Batch processing**: Higher batch sizes improve throughput on powerful GPUs
+## 🎬 Usage
 
-## Contributing
+1. **Launch** RustScale
+2. **Select** your scenario (Fast, Balanced, Quality, or Digital Art)
+3. **Drag & drop** images or folders
+4. **Adjust** settings if needed (repair strength, face recovery)
+5. **Click** upscale and watch the magic happen ✨
 
-Contributions are welcome! Whether it's bug reports, feature requests, or code improvements, I'd love to hear from you.
+## 💡 Performance Tips
 
-## Acknowledgments
+| Scenario | Tip |
+|----------|-----|
+| 💻 **Laptop users** | App automatically enables Eco Mode on battery power |
+| 🎮 **Limited VRAM** | Engine adjusts tile sizes based on available memory |
+| 🚀 **Batch processing** | Higher batch sizes improve throughput on powerful GPUs |
 
-- Built with [Tauri v2](https://tauri.app/)
-- Powered by [ONNX Runtime](https://onnxruntime.ai/)
-- UI framework: [Svelte 5](https://svelte.dev/)
-- AI coding assistance: Google Antigravity, Gemini 3, Claude Sonnet 4.5
+## 🤝 Contributing
+
+Contributions are welcome! Whether it's:
+
+- 🐛 **Bug reports**
+- 💡 **Feature requests**
+- 🔧 **Code improvements**
+- 📖 **Documentation**
+
+**I'd love to hear from you!**
+
+<div align="center">
+
+[![GitHub Issues](https://img.shields.io/github/issues/yourusername/rustscale?style=flat-square)](../../issues)
+[![GitHub Pull Requests](https://img.shields.io/github/issues-pr/yourusername/rustscale?style=flat-square)](../../pulls)
+
+</div>
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+Built with modern, powerful tools:
+
+- 🦀 [Tauri v2](https://tauri.app/) - Lightweight desktop framework
+- 🧠 [ONNX Runtime](https://onnxruntime.ai/) - Cross-platform AI inference
+- ⚡ [Svelte 5](https://svelte.dev/) - Reactive UI framework
+- 🎨 [TailwindCSS v4](https://tailwindcss.com/) - Utility-first styling
+- 🤖 AI Coding Agents: Google Antigravity, Gemini 3, Claude Sonnet 4.5
+
+## 📊 Project Stats
+
+<div align="center">
+
+![GitHub Stars](https://img.shields.io/github/stars/yourusername/rustscale?style=social)
+![GitHub Forks](https://img.shields.io/github/forks/yourusername/rustscale?style=social)
+![GitHub Watchers](https://img.shields.io/github/watchers/yourusername/rustscale?style=social)
+
+</div>
+
+---
+
+<div align="center">
+
+**RustScale**: Bringing desktop AI upscaling into the modern era.
+
+Made with ❤️ and 🤖
+
+[⬆ Back to Top](#-rustscale-desktop)
+
+</div>
