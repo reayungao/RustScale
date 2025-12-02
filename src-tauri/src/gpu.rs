@@ -2,6 +2,9 @@ use crate::error::{AppError, AppResult};
 use serde::{Deserialize, Serialize};
 use std::process::Command;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GpuInfo {
     pub name: String,
@@ -105,13 +108,44 @@ impl GpuInfo {
         Self::fallback_system_memory()
     }
 
-    /// NVIDIA GPU detection using nvidia-smi
+    /// NVIDIA GPU detection using NVML (Native) with CLI fallback
     fn detect_nvidia() -> AppResult<Self> {
-        let output = Command::new("nvidia-smi")
-            .args(&[
-                "--query-gpu=name,memory.used,memory.total",
-                "--format=csv,noheader,nounits",
-            ])
+        // 1. Try Native NVML
+        #[cfg(any(target_os = "windows", target_os = "linux"))]
+        {
+            use nvml_wrapper::Nvml;
+            if let Ok(nvml) = Nvml::init() {
+                if let Ok(device) = nvml.device_by_index(0) {
+                    if let Ok(memory) = device.memory_info() {
+                        let name = device.name().unwrap_or_else(|_| "NVIDIA GPU".to_string());
+                        return Ok(GpuInfo {
+                            name,
+                            vram_used_mb: memory.used / 1024 / 1024,
+                            vram_total_mb: memory.total / 1024 / 1024,
+                            vendor: GpuVendor::Nvidia,
+                            detection_method: "NVML (Native)".to_string(),
+                            is_npu: false,
+                        });
+                    }
+                }
+            }
+        }
+
+        // 2. Fallback to CLI
+        Self::detect_nvidia_cli()
+    }
+
+    fn detect_nvidia_cli() -> AppResult<Self> {
+        let mut cmd = Command::new("nvidia-smi");
+        cmd.args(&[
+            "--query-gpu=name,memory.used,memory.total",
+            "--format=csv,noheader,nounits",
+        ]);
+
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = cmd
             .output()
             .map_err(|_| AppError::Unknown("nvidia-smi not found".to_string()))?;
 
@@ -131,7 +165,7 @@ impl GpuInfo {
             vram_used_mb: parts[1].trim().parse().unwrap_or(0),
             vram_total_mb: parts[2].trim().parse().unwrap_or(0),
             vendor: GpuVendor::Nvidia,
-            detection_method: "nvidia-smi".to_string(),
+            detection_method: "nvidia-smi (CLI)".to_string(),
             is_npu: false,
         })
     }
@@ -139,7 +173,17 @@ impl GpuInfo {
     /// AMD GPU detection
     #[cfg(target_os = "windows")]
     fn detect_amd() -> AppResult<Self> {
-        // Try AMD Display Library via PowerShell
+        // 1. Try Native WMI
+        if let Ok(info) = Self::detect_wmi("AMD", "Radeon") {
+            return Ok(info);
+        }
+
+        // 2. Fallback to CLI
+        Self::detect_amd_cli()
+    }
+
+    #[cfg(target_os = "windows")]
+    fn detect_amd_cli() -> AppResult<Self> {
         let script = r#"
             $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Name -like '*AMD*' -or $_.Name -like '*Radeon*' } | Select-Object -First 1
             if ($gpu) {
@@ -149,8 +193,11 @@ impl GpuInfo {
             }
         "#;
 
-        let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", script])
+        let mut cmd = Command::new("powershell");
+        cmd.args(&["-NoProfile", "-Command", script]);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = cmd
             .output()
             .map_err(|_| AppError::Unknown("PowerShell failed".to_string()))?;
 
@@ -169,10 +216,10 @@ impl GpuInfo {
 
         Ok(GpuInfo {
             name: parts[0].trim().to_string(),
-            vram_used_mb: 0, // Windows WMI doesn't provide used VRAM easily
+            vram_used_mb: 0,
             vram_total_mb: total_mb,
             vendor: GpuVendor::Amd,
-            detection_method: "WMI".to_string(),
+            detection_method: "WMI (CLI)".to_string(),
             is_npu: false,
         })
     }
@@ -206,6 +253,17 @@ impl GpuInfo {
     /// Intel GPU detection
     #[cfg(target_os = "windows")]
     fn detect_intel() -> AppResult<Self> {
+        // 1. Try Native WMI
+        if let Ok(info) = Self::detect_wmi("Intel", "Intel") {
+            return Ok(info);
+        }
+
+        // 2. Fallback to CLI
+        Self::detect_intel_cli()
+    }
+
+    #[cfg(target_os = "windows")]
+    fn detect_intel_cli() -> AppResult<Self> {
         let script = r#"
             $gpu = Get-WmiObject Win32_VideoController | Where-Object { $_.Name -like '*Intel*' } | Select-Object -First 1
             if ($gpu) {
@@ -215,8 +273,11 @@ impl GpuInfo {
             }
         "#;
 
-        let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", script])
+        let mut cmd = Command::new("powershell");
+        cmd.args(&["-NoProfile", "-Command", script]);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = cmd
             .output()
             .map_err(|_| AppError::Unknown("PowerShell failed".to_string()))?;
 
@@ -238,7 +299,7 @@ impl GpuInfo {
             vram_used_mb: 0,
             vram_total_mb: total_mb,
             vendor: GpuVendor::Intel,
-            detection_method: "WMI".to_string(),
+            detection_method: "WMI (CLI)".to_string(),
             is_npu: false,
         })
     }
@@ -298,6 +359,19 @@ impl GpuInfo {
     /// NPU detection (Windows)
     #[cfg(target_os = "windows")]
     fn detect_npu() -> AppResult<Self> {
+        // 1. Try Native WMI (PnPEntity)
+        // Note: WMI query for PnPEntity can be slow, but native is faster than PowerShell
+        // For now, we'll stick to the CLI fallback for NPU as it's less critical,
+        // but we MUST use CREATE_NO_WINDOW.
+
+        // Actually, let's try to implement native WMI for NPU too if possible,
+        // but Win32_PnPEntity is huge. Let's stick to CLI for NPU for now to avoid complexity,
+        // but fix the window.
+        Self::detect_npu_cli()
+    }
+
+    #[cfg(target_os = "windows")]
+    fn detect_npu_cli() -> AppResult<Self> {
         // Look for common NPU device names in PNP Entities
         // Intel: "Intel(R) AI Boost"
         // AMD: "AMD IPU Device"
@@ -309,8 +383,11 @@ impl GpuInfo {
             }
         "#;
 
-        let output = Command::new("powershell")
-            .args(&["-NoProfile", "-Command", script])
+        let mut cmd = Command::new("powershell");
+        cmd.args(&["-NoProfile", "-Command", script]);
+        cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+
+        let output = cmd
             .output()
             .map_err(|_| AppError::Unknown("PowerShell failed".to_string()))?;
 
@@ -335,7 +412,7 @@ impl GpuInfo {
             vram_used_mb: sys.used_memory() / 1024 / 1024,
             vram_total_mb: sys.total_memory() / 1024 / 1024,
             vendor: GpuVendor::from_name(&output_str),
-            detection_method: "WMI (NPU)".to_string(),
+            detection_method: "WMI (NPU CLI)".to_string(),
             is_npu: true,
         })
     }
@@ -345,6 +422,54 @@ impl GpuInfo {
         Err(AppError::Unknown(
             "NPU detection not supported on this OS".to_string(),
         ))
+    }
+
+    /// Helper for Native WMI Detection (Windows)
+    #[cfg(target_os = "windows")]
+    fn detect_wmi(filter1: &str, filter2: &str) -> AppResult<Self> {
+        use serde::Deserialize;
+        use std::collections::HashMap;
+        use wmi::{COMLibrary, WMIConnection};
+
+        #[derive(Deserialize, Debug)]
+        #[allow(non_snake_case)]
+        struct VideoController {
+            Name: String,
+            AdapterRAM: Option<u64>,
+        }
+
+        let com_con =
+            COMLibrary::new().map_err(|_| AppError::Unknown("COM Init failed".to_string()))?;
+        let wmi_con = WMIConnection::new(com_con)
+            .map_err(|_| AppError::Unknown("WMI Init failed".to_string()))?;
+
+        let results: Vec<VideoController> = wmi_con
+            .raw_query("SELECT Name, AdapterRAM FROM Win32_VideoController")
+            .map_err(|_| AppError::Unknown("WMI Query failed".to_string()))?;
+
+        for gpu in results {
+            if gpu.Name.contains(filter1) || gpu.Name.contains(filter2) {
+                let vram = gpu.AdapterRAM.unwrap_or(0) / 1024 / 1024;
+                let vendor = if gpu.Name.to_lowercase().contains("amd")
+                    || gpu.Name.to_lowercase().contains("radeon")
+                {
+                    GpuVendor::Amd
+                } else {
+                    GpuVendor::Intel
+                };
+
+                return Ok(GpuInfo {
+                    name: gpu.Name,
+                    vram_used_mb: 0,
+                    vram_total_mb: vram,
+                    vendor,
+                    detection_method: "WMI (Native)".to_string(),
+                    is_npu: false,
+                });
+            }
+        }
+
+        Err(AppError::Unknown("GPU not found via WMI".to_string()))
     }
 
     /// Check if we have enough VRAM for a given operation
