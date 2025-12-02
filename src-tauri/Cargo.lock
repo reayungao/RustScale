@@ -4093,6 +4093,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "rustscale"
+version = "0.1.0"
+dependencies = [
+ "bytes",
+ "fast_image_resize",
+ "half",
+ "image",
+ "img-parts",
+ "kamadak-exif",
+ "little_exif",
+ "memmap2",
+ "notify",
+ "ort",
+ "rayon",
+ "serde",
+ "serde_json",
+ "sysinfo",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-fs",
+ "tauri-plugin-opener",
+ "thiserror 1.0.69",
+ "tracing",
+ "tracing-appender",
+ "tracing-subscriber",
+ "uuid",
+ "webp",
+]
+
+[[package]]
 name = "rustversion"
 version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4795,37 +4826,6 @@ dependencies = [
  "webview2-com",
  "window-vibrancy",
  "windows",
-]
-
-[[package]]
-name = "tauri-apprustscale"
-version = "0.1.0"
-dependencies = [
- "bytes",
- "fast_image_resize",
- "half",
- "image",
- "img-parts",
- "kamadak-exif",
- "little_exif",
- "memmap2",
- "notify",
- "ort",
- "rayon",
- "serde",
- "serde_json",
- "sysinfo",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-fs",
- "tauri-plugin-opener",
- "thiserror 1.0.69",
- "tracing",
- "tracing-appender",
- "tracing-subscriber",
- "uuid",
- "webp",
 ]
 
 [[package]]

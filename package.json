@@ -1,7 +1,8 @@
 {
-  "name": "tauri-apprustscale",
+  "name": "rustscale",
   "version": "0.1.0",
-  "description": "",
+  "description": "The definitive AI-powered image upscaler for 2025.",
+  "author": "RustScale",
   "type": "module",
   "scripts": {
     "dev": "vite dev",
