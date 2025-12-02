@@ -12,8 +12,6 @@
 
 [Features](#-key-features) • [Installation](#-installation) • [Usage](#-usage) • [Contributing](#-contributing)
 
-![RustScale Demo](https://via.placeholder.com/800x400/1a1a1a/ffffff?text=RustScale+Demo+Screenshot)
-
 </div>
 
 ---
@@ -131,14 +129,12 @@ RustScale uses a **"Native Integration Architecture"** instead of spawning exter
 ### Download the latest release for your platform:
 
 [![Windows](https://img.shields.io/badge/Windows-0078D6?style=for-the-badge&logo=windows&logoColor=white)](../../releases)
-[![macOS](https://img.shields.io/badge/macOS-000000?style=for-the-badge&logo=apple&logoColor=white)](../../releases)
 [![Linux](https://img.shields.io/badge/Linux-FCC624?style=for-the-badge&logo=linux&logoColor=black)](../../releases)
 
 </div>
 
 **Installation Files:**
-- 🪟 Windows: `.exe` installer
-- 🍎 macOS: `.dmg` disk image  
+- 🪟 Windows: `.exe` installer 
 - 🐧 Linux: `.AppImage`
 
 ## 🎬 Usage
