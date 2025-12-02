@@ -1,0 +1,34 @@
+{
+  "overrides": {
+    "Real-ESRGAN-V3.onnx": {
+      "name": "Real-ESRGAN-V3",
+      "description": "Legacy Model",
+      "batch_size": 5
+    },
+    "4xSPANkendata_fp32.onnx": {
+      "name": "SPAN",
+      "description": "Fast for Low-Res Images",
+      "batch_size": 5
+    },
+    "4xNomos2_realplksr_dysample_256_fp32_fullyoptimized.onnx": {
+      "name": "Real-PLSKR",
+      "description": "Best Quality",
+      "batch_size": 1
+    },
+    "4xNomosUni_span_multijpg_fp32_opset17.onnx": {
+      "name": "NomosUni SPAN",
+      "description": "SPAN for Digital Art",
+      "batch_size": 1
+    },
+    "4xHFA2k_ludvae_realplksr_dysample_256_fp32_fullyoptimized.onnx": {
+      "name": "RealPLSKR Anime",
+      "description": "Best Quality for Digital Art and Anime",
+      "batch_size": 1
+    },
+    "SAFMNv3_x4.onnx": {
+      "name": "SAFMN-V3",
+      "description": "Next-Gen Efficient Model",
+      "batch_size": 1
+    }
+  }
+}

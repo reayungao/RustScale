@@ -1,0 +1,41 @@
+{
+  "name": "tauri-apprustscale",
+  "version": "0.1.0",
+  "description": "",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "tauri": "tauri",
+    "rust:check": "cd src-tauri && cargo check",
+    "rust:clippy": "cd src-tauri && cargo clippy -- -D warnings",
+    "rust:fix": "cd src-tauri && cargo fix --lib --allow-dirty",
+    "rust:format": "cd src-tauri && cargo fmt",
+    "rust:diagnose": "cd src-tauri/scripts && powershell -ExecutionPolicy Bypass -File diagnose.ps1",
+    "rust:logs": "powershell -Command \"Get-Content logs/rustscale.log.* -Tail 20 -Wait\""
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@tauri-apps/api": "^2",
+    "@tauri-apps/plugin-dialog": "^2.4.2",
+    "@tauri-apps/plugin-fs": "^2.4.4",
+    "@tauri-apps/plugin-opener": "^2"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.6",
+    "@sveltejs/kit": "^2.9.0",
+    "@sveltejs/vite-plugin-svelte": "^5.0.0",
+    "@tailwindcss/postcss": "^4.1.17",
+    "@tauri-apps/cli": "^2",
+    "autoprefixer": "^10.4.22",
+    "postcss": "^8.5.6",
+    "svelte": "^5.0.0",
+    "svelte-check": "^4.0.0",
+    "tailwindcss": "^4.1.17",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.3"
+  }
+}
