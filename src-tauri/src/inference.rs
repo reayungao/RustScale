@@ -32,12 +32,17 @@ impl Clone for TensorData {
 // --- Session Wrapper ---
 pub struct OrtSession {
     pub session: Mutex<Session>,
-    pub execution_provider: String,
+    pub execution_provider: String, // The ACTUAL provider (e.g. "DirectMLExecutionProvider")
+    pub provider_id: String,        // The REQUESTED provider (e.g. "auto", "directml")
     pub input_type: TensorElementType,
 }
 
 impl OrtSession {
-    pub fn new(model_path: &Path, prefer_npu: bool) -> AppResult<Self> {
+    pub fn new(
+        model_path: &Path,
+        prefer_npu: bool,
+        execution_provider: Option<String>,
+    ) -> AppResult<Self> {
         let num_threads = std::thread::available_parallelism()
             .map(|n| n.get())
             .unwrap_or(4)
@@ -59,49 +64,128 @@ impl OrtSession {
         let try_provider = |name: &str, builder: SessionBuilder| -> Option<(Session, String)> {
             match builder.commit_from_file(model_path) {
                 Ok(s) => Some((s, name.to_string())),
-                Err(_) => None,
+                Err(e) => {
+                    tracing::warn!("Failed to initialize {}: {}", name, e);
+                    None
+                }
             }
         };
 
-        // --- NPU PRIORITY PATH ---
-        if prefer_npu {
+        let provider_override = execution_provider
+            .as_deref()
+            .unwrap_or("auto")
+            .to_lowercase();
+
+        // --- MANUAL OVERRIDES ---
+        if provider_override == "directml" {
             #[cfg(target_os = "windows")]
             {
-                if session.is_none() {
-                    if let Ok(ov_builder) = builder.clone().with_execution_providers([
-                        ort::execution_providers::OpenVINOExecutionProvider::default().build(),
-                    ]) {
-                        if let Some(s) = try_provider("OpenVINO (NPU/Auto)", ov_builder) {
-                            session = Some(s);
-                        }
-                    }
-                }
-            }
-            #[cfg(target_os = "macos")]
-            {
-                if session.is_none() {
-                    if let Ok(coreml_builder) = builder.clone().with_execution_providers([
-                        ort::execution_providers::CoreMLExecutionProvider::default()
-                            .with_ane_only()
-                            .build(),
-                    ]) {
-                        if let Some(s) = try_provider("CoreML (Neural Engine)", coreml_builder) {
-                            session = Some(s);
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- GPU PATHS ---
-        #[cfg(target_os = "windows")]
-        {
-            if session.is_none() {
                 if let Ok(dml_builder) = builder.clone().with_execution_providers([
                     ort::execution_providers::DirectMLExecutionProvider::default().build(),
                 ]) {
-                    if let Some(s) = try_provider("DirectML (GPU)", dml_builder) {
+                    if let Some(s) = try_provider("DirectML (Forced)", dml_builder) {
                         session = Some(s);
+                    }
+                }
+            }
+        } else if provider_override == "openvino" {
+            #[cfg(target_os = "windows")]
+            {
+                // Try GPU first, then Auto
+                if let Ok(ov_builder) = builder.clone().with_execution_providers([
+                    ort::execution_providers::OpenVINOExecutionProvider::default()
+                        .with_device_type("GPU")
+                        .build(),
+                ]) {
+                    if let Some(s) = try_provider("OpenVINO (Forced GPU)", ov_builder) {
+                        session = Some(s);
+                    }
+                }
+            }
+        } else if provider_override == "cpu" {
+            // Do nothing, fall through to CPU
+        } else {
+            // --- AUTO MODE (Existing Logic) ---
+
+            // --- NPU PRIORITY PATH ---
+            if prefer_npu {
+                #[cfg(target_os = "windows")]
+                {
+                    if session.is_none() {
+                        if let Ok(ov_builder) = builder.clone().with_execution_providers([
+                            ort::execution_providers::OpenVINOExecutionProvider::default().build(),
+                        ]) {
+                            if let Some(s) = try_provider("OpenVINO (NPU/Auto)", ov_builder) {
+                                session = Some(s);
+                            }
+                        }
+                    }
+                }
+                #[cfg(target_os = "macos")]
+                {
+                    if session.is_none() {
+                        if let Ok(coreml_builder) = builder.clone().with_execution_providers([
+                            ort::execution_providers::CoreMLExecutionProvider::default()
+                                .with_ane_only()
+                                .build(),
+                        ]) {
+                            if let Some(s) = try_provider("CoreML (Neural Engine)", coreml_builder)
+                            {
+                                session = Some(s);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // --- GPU PATHS ---
+            #[cfg(target_os = "windows")]
+            {
+                // 1. OpenVINO GPU (Intel Priority) - Native & Efficient
+                // CRITICAL: Only use OpenVINO if we detect an Intel GPU.
+                // Otherwise it might try to run on NVIDIA/AMD via OpenCL which is slow.
+                let is_intel = if let Ok(gpu_info) = crate::gpu::GpuInfo::detect() {
+                    gpu_info.vendor == crate::gpu::GpuVendor::Intel
+                } else {
+                    false
+                };
+
+                if session.is_none() && is_intel {
+                    if let Ok(ov_builder) = builder.clone().with_execution_providers([
+                        ort::execution_providers::OpenVINOExecutionProvider::default()
+                            .with_device_type("GPU")
+                            .build(),
+                    ]) {
+                        if let Some(s) = try_provider("OpenVINO (Intel GPU)", ov_builder) {
+                            session = Some(s);
+                        }
+                    }
+                }
+
+                // 2. DirectML (Generic Fallback)
+                if session.is_none() {
+                    // Memory Safety Check for DirectML
+                    // DirectML can be unstable on low-memory iGPUs if we don't check first.
+                    let has_enough_memory = if let Ok(gpu_info) = crate::gpu::GpuInfo::detect() {
+                        // Require at least 1GB free for DirectML stability
+                        if gpu_info.vram_total_mb.saturating_sub(gpu_info.vram_used_mb) < 1024 {
+                            tracing::warn!("Skipping DirectML: Insufficient VRAM (< 1GB free).");
+                            false
+                        } else {
+                            true
+                        }
+                    } else {
+                        true // Assume yes if detection fails
+                    };
+
+                    if has_enough_memory {
+                        if let Ok(dml_builder) = builder.clone().with_execution_providers([
+                            ort::execution_providers::DirectMLExecutionProvider::default().build(),
+                        ]) {
+                            if let Some(s) = try_provider("DirectML (GPU)", dml_builder) {
+                                session = Some(s);
+                            }
+                        }
                     }
                 }
             }
@@ -175,6 +259,7 @@ impl OrtSession {
             Ok(Self {
                 session: Mutex::new(session),
                 execution_provider: provider,
+                provider_id: provider_override,
                 input_type: ty,
             })
         } else {

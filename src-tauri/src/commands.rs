@@ -40,6 +40,7 @@ pub async fn preload_model(
     _state: State<'_, AppState>,
     model_filename: String,
     prefer_npu: bool,
+    execution_provider: Option<String>,
 ) -> Result<PreloadResponse, AppError> {
     let app_handle_clone = app_handle.clone();
 
@@ -56,7 +57,7 @@ pub async fn preload_model(
         }
 
         // Load or Get from Cache
-        let session = state.get_or_load_model(&model_path, prefer_npu)?;
+        let session = state.get_or_load_model(&model_path, prefer_npu, execution_provider)?;
 
         // Detect Scale (Cached)
         let scale = match state.get_model_scale(&model_path, &session) {

@@ -428,7 +428,7 @@ impl GpuInfo {
     #[cfg(target_os = "windows")]
     fn detect_wmi(filter1: &str, filter2: &str) -> AppResult<Self> {
         use serde::Deserialize;
-        use std::collections::HashMap;
+
         use wmi::{COMLibrary, WMIConnection};
 
         #[derive(Deserialize, Debug)]

@@ -38,9 +38,7 @@ half = { version = "2.3", features = ["bytemuck"] }
 rayon = "1.10"
 webp = "0.3"
 img-parts = "0.3"
-little_exif = "0.5"
 memmap2 = "0.9.9"
-tracing-appender = "0.2.4"
 notify = "8.2.0"
 wmi = "0.13"
 nvml-wrapper = "0.9"
@@ -59,3 +57,10 @@ ort = { version = "2.0.0-rc.10", features = ["load-dynamic", "coreml", "half"] }
 [profile.dev.package."*"]
 opt-level = 3
 
+
+[profile.release]
+codegen-units = 1 # Maximum optimization (slower build, faster runtime)
+lto = true        # Link Time Optimization (smaller binary, faster runtime)
+strip = true      # Remove debug symbols (smaller binary)
+panic = "abort"   # Remove panic unwinding (smaller binary)
+opt-level = 3     # Maximum optimization level

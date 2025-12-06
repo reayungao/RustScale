@@ -60,45 +60,116 @@
         class="text-xs font-bold text-(--text-secondary) uppercase mb-3 flex justify-between items-center"
     >
         <span>System Status</span>
-        <div class="relative group">
-            <span
-                class="text-[10px] px-2 py-1 rounded border font-bold uppercase tracking-wider cursor-help transition-colors duration-200"
-                class:bg-[var(--accent-primary)]={true}
-                class:text-white={true}
-                class:border-[var(--accent-primary)]={true}
-                class:bg-opacity-20={true}
-                class:border-opacity-20={true}
-            >
-                {appState.optimizationMode}
-            </span>
+        <div class="flex items-center gap-2">
+            <!-- Loading Pulse -->
+            {#if appState.isModelLoading}
+                <div
+                    class="w-1.5 h-1.5 rounded-full bg-(--accent-primary) animate-pulse"
+                    title="Loading Engine..."
+                ></div>
+            {/if}
 
-            <!-- Tooltip -->
-            <div
-                class="absolute right-0 top-6 w-48 p-2 rounded-lg bg-zinc-800 border border-zinc-700 shadow-xl text-xs text-zinc-300 opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50"
-            >
-                {#if appState.optimizationMode === "Performance"}
-                    <div class="font-bold text-(--accent-primary) mb-1">
-                        Performance Mode
+            <div class="relative group flex items-center">
+                <div class="relative">
+                    <select
+                        bind:value={appState.config.executionProvider}
+                        onchange={() =>
+                            appState.updateConfig({
+                                executionProvider:
+                                    appState.config.executionProvider,
+                            })}
+                        class="text-[10px] pl-2 pr-5 py-1 rounded border font-bold uppercase tracking-wider cursor-pointer transition-colors duration-200 bg-(--bg-surface) border-(--border-main) text-(--text-primary) hover:border-(--accent-primary) focus:outline-none focus:border-(--accent-primary) appearance-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={appState.isModelLoading}
+                    >
+                        <option value="auto">Auto</option>
+                        <option value="directml">DirectML</option>
+                        <option value="openvino">OpenVINO</option>
+                        <option value="cpu">CPU</option>
+                    </select>
+                    <!-- Custom Arrow -->
+                    <div
+                        class="absolute right-1.5 top-1/2 -translate-y-1/2 pointer-events-none text-(--text-secondary) opacity-70"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="10"
+                            height="10"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            ><path d="m6 9 6 6 6-6" /></svg
+                        >
                     </div>
-                    <div>&gt; 12GB Free VRAM.</div>
-                    <div class="text-zinc-500 mt-1">Max Speed (Batch 4).</div>
-                {:else if appState.optimizationMode === "Balanced"}
-                    <div class="font-bold text-(--accent-primary) mb-1">
-                        Balanced Mode
+                </div>
+
+                <!-- Tooltip (Question Mark) -->
+                <div class="relative group/tooltip ml-2">
+                    <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="12"
+                        height="12"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        class="text-(--text-secondary) cursor-help opacity-50 hover:opacity-100 transition-opacity"
+                        ><circle cx="12" cy="12" r="10" /><path
+                            d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"
+                        /><path d="M12 17h.01" /></svg
+                    >
+
+                    <div
+                        class="absolute right-0 top-6 w-64 p-3 rounded-lg bg-zinc-800 border border-zinc-700 shadow-xl text-xs text-zinc-300 opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-200 pointer-events-none z-50"
+                    >
+                        <div
+                            class="font-bold text-(--accent-primary) mb-2 border-b border-zinc-700 pb-1"
+                        >
+                            Execution Provider
+                        </div>
+                        <div class="space-y-2">
+                            <div>
+                                <span class="font-bold text-white block"
+                                    >Auto</span
+                                >
+                                <span class="text-zinc-400"
+                                    >Smart selection. Uses OpenVINO for Intel
+                                    GPUs, DirectML for others.</span
+                                >
+                            </div>
+                            <div>
+                                <span class="font-bold text-white block"
+                                    >DirectML</span
+                                >
+                                <span class="text-zinc-400"
+                                    >Standard GPU acceleration. Works on most
+                                    GPUs (NVIDIA, AMD, Intel).</span
+                                >
+                            </div>
+                            <div>
+                                <span class="font-bold text-white block"
+                                    >OpenVINO</span
+                                >
+                                <span class="text-zinc-400"
+                                    >Highly optimized for Intel GPUs & NPUs.</span
+                                >
+                            </div>
+                            <div>
+                                <span class="font-bold text-white block"
+                                    >CPU</span
+                                >
+                                <span class="text-zinc-400"
+                                    >Slow software fallback. Use only for
+                                    debugging.</span
+                                >
+                            </div>
+                        </div>
                     </div>
-                    <div>6-12GB Free VRAM.</div>
-                    <div class="text-zinc-500 mt-1">
-                        Stable Speed (Batch 2).
-                    </div>
-                {:else}
-                    <div class="font-bold text-(--accent-primary) mb-1">
-                        Efficiency Mode
-                    </div>
-                    <div>&lt; 6GB Free VRAM.</div>
-                    <div class="text-zinc-500 mt-1">
-                        Low Memory (Batch 1) to prevent crashes.
-                    </div>
-                {/if}
+                </div>
             </div>
         </div>
     </h3>

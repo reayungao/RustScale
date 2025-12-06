@@ -18,6 +18,7 @@ pub struct UpscaleConfig {
     pub compression: Option<String>,
     pub prefer_npu: Option<bool>,
     pub output_dir: Option<String>,
+    pub execution_provider: Option<String>,
 }
 
 pub struct EngineCallbacks<P, W>
@@ -64,7 +65,11 @@ impl UpscaleEngine {
         // 2. Load Session (Cached)
         tracing::info!("Loading model session: {}", model_filename);
         let prefer_npu = config.prefer_npu.unwrap_or(false);
-        let session = app_state.get_or_load_model(&model_path, prefer_npu)?;
+        let session = app_state.get_or_load_model(
+            &model_path,
+            prefer_npu,
+            config.execution_provider.clone(),
+        )?;
 
         // Detect Model Scale (Source of Truth - Cached)
         let scale = app_state

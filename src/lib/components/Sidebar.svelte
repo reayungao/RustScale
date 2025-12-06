@@ -355,27 +355,43 @@
             class="w-full py-3 rounded-lg font-bold text-white transition-all duration-200 ease-out transform hover:scale-[1.02] active:scale-98 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
             class:bg-(--accent-primary)={(appState.currentImage ||
                 appState.batchMode) &&
-                appState.status === "idle"}
+                appState.status === "idle" &&
+                !appState.isModelLoading}
             class:shadow-lg={(appState.currentImage || appState.batchMode) &&
-                appState.status === "idle"}
+                appState.status === "idle" &&
+                !appState.isModelLoading}
             class:hover:shadow-xl={(appState.currentImage ||
                 appState.batchMode) &&
-                appState.status === "idle"}
+                appState.status === "idle" &&
+                !appState.isModelLoading}
             class:hover:brightness-110={(appState.currentImage ||
                 appState.batchMode) &&
-                appState.status === "idle"}
+                appState.status === "idle" &&
+                !appState.isModelLoading}
             class:bg-zinc-300={(!appState.currentImage &&
                 !appState.batchMode) ||
-                appState.status !== "idle"}
+                appState.status !== "idle" ||
+                appState.isModelLoading}
             class:dark:bg-zinc-800={(!appState.currentImage &&
                 !appState.batchMode) ||
-                appState.status !== "idle"}
-            class:text-zinc-500={!appState.currentImage && !appState.batchMode}
+                appState.status !== "idle" ||
+                appState.isModelLoading}
+            class:text-zinc-500={!appState.currentImage &&
+                !appState.batchMode &&
+                !appState.isModelLoading}
             disabled={(!appState.currentImage && !appState.batchMode) ||
-                appState.status !== "idle"}
+                appState.status !== "idle" ||
+                appState.isModelLoading}
             onclick={() => appState.upscaleImage()}
         >
-            {#if appState.status === "processing"}
+            {#if appState.isModelLoading}
+                <span class="flex items-center justify-center gap-2">
+                    <div
+                        class="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
+                    ></div>
+                    Loading Engine...
+                </span>
+            {:else if appState.status === "processing"}
                 Processing...
             {:else}
                 Upscale Image

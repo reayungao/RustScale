@@ -27,7 +27,10 @@ interface UpscaleConfig {
     format: "png" | "webp" | "jpeg";
     compression: "lossy" | "lossless";
     preferNpu: boolean;
+    executionProvider: "auto" | "directml" | "openvino" | "cpu";
 }
+
+
 
 interface ProgressPayload {
     job_id: string;
@@ -67,6 +70,7 @@ class AppState {
     progress = $state(0);
     executionProvider = $state<string>("");
     currentJobId = $state<string | null>(null);
+    isModelLoading = $state(false);
 
     // UI State
     activePopover = $state<string | null>(null);
@@ -79,7 +83,8 @@ class AppState {
 
         format: "jpeg",
         compression: "lossy",
-        preferNpu: false
+        preferNpu: false,
+        executionProvider: "auto"
     });
 
     // Theme (persisted)
@@ -246,6 +251,14 @@ class AppState {
             return;
         }
 
+        // Handle Execution Provider Change (Hot Reload)
+        if (updates.executionProvider && updates.executionProvider !== this.config.executionProvider) {
+            Object.assign(this.config, updates);
+            this.persistConfig();
+            this.setModel(this.config.model); // Trigger reload with new provider
+            return;
+        }
+
         // Apply other updates
         Object.assign(this.config, updates);
         this.persistConfig();
@@ -267,6 +280,8 @@ class AppState {
             clearTimeout(this.loadTimeout);
         }
 
+        this.isModelLoading = true; // Start loading state (Pulse UI)
+
         this.loadTimeout = setTimeout(async () => {
             // Preload Model & Detect Scale (Background)
             try {
@@ -278,6 +293,7 @@ class AppState {
                 const response = await invoke<{ scale: number; batch_size?: number }>("preload_model", {
                     modelFilename: newModel.filename,
                     preferNpu: this.config.preferNpu,
+                    executionProvider: this.config.executionProvider,
                 });
 
                 // Race Condition Check: If the user switched models again, ignore this result
@@ -294,9 +310,14 @@ class AppState {
                     this.addToast(`Model Scale Detected: ${response.scale}x`, "info");
                 }
 
+                // Show toast for provider switch if it was a reload
+                // (Optional: could add logic to detect if this was a provider switch vs model switch)
+
             } catch (e) {
                 console.error("Failed to preload model:", e);
                 // Don't show error toast for preload failure, it's a background optimization
+            } finally {
+                this.isModelLoading = false; // End loading state
             }
         }, 300);
     }
@@ -388,9 +409,8 @@ class AppState {
                     scale: this.config.scale,
                     batch_size: this.config.batchSize,
 
-                    format: this.config.format,
-                    compression: this.config.compression,
                     prefer_npu: this.config.preferNpu,
+                    execution_provider: this.config.executionProvider,
                 },
                 id: this.currentJobId // Pass the ID to backend
             });
@@ -448,6 +468,7 @@ class AppState {
                     format: this.config.format,
                     compression: this.config.compression,
                     prefer_npu: this.config.preferNpu,
+                    execution_provider: this.config.executionProvider,
                 },
                 id: this.currentJobId
             });
@@ -488,6 +509,11 @@ class AppState {
                 // Always update global status/progress (for single file mode)
                 this.progress = progress;
                 this.status = status as any;
+
+                // FIX: Ensure execution provider is updated from the event payload
+                if (event.payload.execution_provider) {
+                    this.executionProvider = event.payload.execution_provider;
+                }
 
                 // Targeted update for batch mode
                 if (current_file) {

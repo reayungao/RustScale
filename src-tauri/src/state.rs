@@ -100,6 +100,7 @@ impl AppState {
         &self,
         model_path: &Path,
         prefer_npu: bool,
+        execution_provider: Option<String>,
     ) -> AppResult<Arc<OrtSession>> {
         // 1. Memory Safety Check
         // We use a simple refresh to be safe and compatible
@@ -114,7 +115,7 @@ impl AppState {
                 "Low Memory ({:.2} GB free). Skipping model cache for safety.",
                 available_ram_gb
             );
-            let session = OrtSession::new(model_path, prefer_npu)?;
+            let session = OrtSession::new(model_path, prefer_npu, execution_provider)?;
             return Ok(Arc::new(session));
         }
 
@@ -123,15 +124,44 @@ impl AppState {
             let cache = self.model_cache.lock().unwrap();
             if let Some((cached_path, session)) = &*cache {
                 if cached_path == model_path {
-                    tracing::info!("Cache Hit: {:?}", model_path);
-                    return Ok(session.clone());
+                    // Check if cached session matches requested provider?
+                    // Ideally yes, but for now let's assume if path matches it's okay.
+                    // If user switches provider, we should probably invalidate cache or check provider.
+                    // But OrtSession stores execution_provider string!
+                    // Let's check if we can access it.
+                    // session.execution_provider is public.
+
+                    let requested_provider = execution_provider
+                        .as_deref()
+                        .unwrap_or("auto")
+                        .to_lowercase();
+
+                    // Strict Match: The cached session must have been created with the same intent.
+                    // If I requested "auto", I want a session created with "auto".
+                    // If I requested "openvino", I want a session created with "openvino".
+                    let match_provider = session.provider_id == requested_provider;
+
+                    if match_provider {
+                        tracing::info!(
+                            "Cache Hit: {:?} (Provider: {})",
+                            model_path,
+                            session.execution_provider
+                        );
+                        return Ok(session.clone());
+                    } else {
+                        tracing::info!(
+                            "Cache Miss (Provider Mismatch): Requested {}, Cached {}",
+                            requested_provider,
+                            session.execution_provider
+                        );
+                    }
                 }
             }
         }
 
         // 3. Load New Model (Heavy Operation)
         tracing::info!("Loading model from: {:?}", model_path);
-        let session = OrtSession::new(model_path, prefer_npu)?;
+        let session = OrtSession::new(model_path, prefer_npu, execution_provider)?;
         let session_arc = Arc::new(session);
 
         // 4. Update Cache (Single Slot)
